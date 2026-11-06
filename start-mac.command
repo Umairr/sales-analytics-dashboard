@@ -4,6 +4,12 @@ cd "$(dirname "$0")"
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 set -e
 
+# Stop anything still running from a previous launch on our ports.
+for port in 8000 5173; do
+  pids=$(lsof -ti tcp:$port 2>/dev/null || true)
+  if [ -n "$pids" ]; then echo "Freeing port $port"; kill $pids 2>/dev/null || true; sleep 1; fi
+done
+
 echo "== Backend setup"
 cd backend
 if [ ! -d .venv ]; then
