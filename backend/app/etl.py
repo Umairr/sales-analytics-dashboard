@@ -20,7 +20,12 @@ from .db import brands, etl_runs, get_engine, order_items, orders, subscriptions
 from .seed import SOURCES_DIR
 
 # Fixed reference rates keep reporting reproducible. Swap for a rates API in production.
-FX_TO_USD = {"USD": 1.0, "EUR": 1.08, "GBP": 1.27, "AED": 0.272, "PKR": 0.0036}
+FX_TO_USD = {
+    "USD": 1.0, "EUR": 1.08, "GBP": 1.27, "CAD": 0.73, "AUD": 0.66, "NZD": 0.60, "CHF": 1.13,
+    "AED": 0.272, "SAR": 0.267, "QAR": 0.275, "KWD": 3.25, "INR": 0.012, "PKR": 0.0036,
+    "JPY": 0.0066, "CNY": 0.14, "SGD": 0.74, "HKD": 0.128, "SEK": 0.095, "NOK": 0.093,
+    "DKK": 0.145, "PLN": 0.25, "TRY": 0.029, "BRL": 0.18, "MXN": 0.055, "ZAR": 0.055,
+}
 VALID_STATUSES = {"paid", "refunded", "pending"}
 
 
@@ -37,14 +42,12 @@ class EtlResult:
 
 def extract(source_dir: Path = SOURCES_DIR) -> list[dict]:
     files = sorted(source_dir.glob("*.json"))
-    if not files:
-        raise FileNotFoundError(f"No store exports found in {source_dir}. Run `python -m app.seed` first.")
     return [json.loads(f.read_text()) for f in files]
 
 
 def to_usd(amount: str | float, currency: str) -> float:
     if currency not in FX_TO_USD:
-        raise ValueError(f"Unsupported currency: {currency}")
+        raise ValueError(f"Unsupported currency: {currency}. Add its USD rate to FX_TO_USD in app/etl.py")
     return round(float(amount) * FX_TO_USD[currency], 2)
 
 
@@ -127,6 +130,16 @@ def load(exports: list[dict], engine: Engine | None = None) -> EtlResult:
                 conn.execute(insert(subscriptions), [{"brand_id": brand_id, **s} for s in clean_subs])
             result.subscriptions_loaded += len(clean_subs)
             result.brands += 1
+
+        # The database mirrors the sources folder: brands whose export was removed are dropped.
+        keep = [e["brand"]["code"] for e in exports]
+        stale = conn.execute(select(brands.c.id).where(brands.c.code.not_in(keep))).scalars().all()
+        for bid in stale:
+            conn.execute(delete(order_items).where(order_items.c.order_id.in_(
+                select(orders.c.id).where(orders.c.brand_id == bid))))
+            conn.execute(delete(orders).where(orders.c.brand_id == bid))
+            conn.execute(delete(subscriptions).where(subscriptions.c.brand_id == bid))
+            conn.execute(delete(brands).where(brands.c.id == bid))
 
         conn.execute(insert(etl_runs).values(
             ran_at=datetime.utcnow(), orders_loaded=result.orders_loaded,

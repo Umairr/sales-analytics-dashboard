@@ -5,12 +5,14 @@ import Brands from './pages/Brands'
 import Customers from './pages/Customers'
 import Orders from './pages/Orders'
 import Overview from './pages/Overview'
+import Sources from './pages/Sources'
 
 const TABS = [
   { id: 'overview', label: 'Overview', Page: Overview },
   { id: 'customers', label: 'Customers', Page: Customers },
   { id: 'brands', label: 'Brands', Page: Brands },
   { id: 'orders', label: 'Orders', Page: Orders },
+  { id: 'sources', label: 'Data sources', Page: Sources },
 ]
 
 const PRESETS = [
@@ -123,6 +125,8 @@ export default function App() {
   }
 
   const { Page } = TABS.find((t) => t.id === tab)
+  const isSources = tab === 'sources'
+  const noData = meta && !meta.max_date
   // Strip the cache-busting key before handing params to pages / URLs.
   const { _r, ...cleanParams } = params
   const { _r: _p, ...cleanPrev } = prevParams
@@ -159,17 +163,17 @@ export default function App() {
           <div>
             <h1>{TABS.find((t) => t.id === tab).label}</h1>
             <p className="sub">
-              {visibleBrands.length} of {brands.length} brands · USD
-              {start && <> · {start} → {end} ({daysBetween(start, end)} days)</>}
+              {isSources ? 'Connect Shopify and WooCommerce stores or import CSV exports' : <>{visibleBrands.length} of {brands.length} brands · USD</>}
+              {!isSources && start && <> · {start} → {end} ({daysBetween(start, end)} days)</>}
             </p>
           </div>
-          {tab !== 'orders' && <a className="primary" href={csvUrl(cleanParams)}>Export CSV</a>}
+          {!isSources && tab !== 'orders' && !noData && <a className="primary" href={csvUrl(cleanParams)}>Export CSV</a>}
         </header>
 
         {etlMsg && <div className="notice">{etlMsg}</div>}
         {error && <div className="error">Could not reach the API at {import.meta.env.VITE_API_URL || 'http://localhost:8000'}: {error}</div>}
 
-        <div className="filters">
+        {!isSources && !noData && <div className="filters">
           <div className="chips" role="group" aria-label="Brands">
             <button className={`chip ${selected.length === 0 ? 'on' : ''}`} onClick={() => setSelected([])}>All brands</button>
             {brands.map((b) => (
@@ -194,9 +198,17 @@ export default function App() {
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
-        {start && <Page key={`${tab}-${reload}`} ctx={ctx} />}
+        {isSources && <Sources onDataChanged={() => setReload((n) => n + 1)} />}
+        {!isSources && noData && (
+          <div className="empty-state">
+            <h2>No store data yet</h2>
+            <p>Connect a Shopify or WooCommerce store, or upload a CSV export, to see your analytics.</p>
+            <button className="primary" onClick={() => openTab('sources')}>Go to Data sources</button>
+          </div>
+        )}
+        {!isSources && start && <Page key={`${tab}-${reload}`} ctx={ctx} />}
 
         <footer className="foot">FastAPI · SQLAlchemy · React · Recharts · ETL across {brands.length} stores</footer>
       </main>

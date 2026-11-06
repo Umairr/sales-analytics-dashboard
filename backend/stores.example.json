@@ -1,0 +1,21 @@
+{
+  "keep_demo_data": false,
+  "stores": [
+    {
+      "code": "my-shopify-store",
+      "name": "My Shopify Store",
+      "platform": "shopify",
+      "shop": "my-store.myshopify.com",
+      "client_id_env": "SHOPIFY_CLIENT_ID_MY_SHOPIFY_STORE",
+      "client_secret_env": "SHOPIFY_CLIENT_SECRET_MY_SHOPIFY_STORE"
+    },
+    {
+      "code": "my-woo-store",
+      "name": "My WordPress Store",
+      "platform": "woocommerce",
+      "url": "https://shop.example.com",
+      "key_env": "WOO_KEY_MY_WOO_STORE",
+      "secret_env": "WOO_SECRET_MY_WOO_STORE"
+    }
+  ]
+}

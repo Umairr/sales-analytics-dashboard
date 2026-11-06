@@ -1,18 +1,25 @@
 """FastAPI service for the multi-store sales analytics dashboard."""
+import asyncio
 import csv
 import io
+import logging
 import os
 from datetime import date
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 
-from . import advanced, analytics, etl
+from . import advanced, analytics, etl, sources
+from .connectors import ConnectorError
 from .db import get_engine, orders
 from .seed import SOURCES_DIR, generate
+
+load_dotenv(sources.BASE_DIR / ".env")
+log = logging.getLogger("analytics")
 
 app = FastAPI(title="Multi-Store Sales Analytics API", version="1.0.0")
 app.add_middleware(
@@ -33,15 +40,34 @@ def _check_range(start: date | None, end: date | None):
 
 
 @app.on_event("startup")
-def bootstrap():
-    """On a fresh database, seed demo exports and run the ETL so the dashboard has data."""
+async def bootstrap():
+    """First start: sync configured stores, or fall back to demo data so the dashboard is never empty.
+    Set SYNC_INTERVAL_MINUTES to keep syncing in the background."""
     engine = get_engine()
     with engine.connect() as conn:
         has_data = conn.execute(select(func.count()).select_from(orders)).scalar()
+    has_stores = bool(sources.configured_stores())
+    if not has_data and has_stores:
+        result = await asyncio.to_thread(sources.sync_all)
+        log.warning("initial sync: %s", [(r["code"], r["ok"]) for r in result["stores"]])
+        with engine.connect() as conn:
+            has_data = conn.execute(select(func.count()).select_from(orders)).scalar()
     if not has_data and os.getenv("AUTO_SEED", "1") == "1":
         if not any(SOURCES_DIR.glob("*.json")):
             generate()
         etl.run()
+    interval = float(os.getenv("SYNC_INTERVAL_MINUTES", "0") or 0)
+    if has_stores and interval > 0:
+        asyncio.create_task(_sync_loop(interval))
+
+
+async def _sync_loop(minutes: float):
+    while True:
+        await asyncio.sleep(minutes * 60)
+        try:
+            await asyncio.to_thread(sources.sync_all)
+        except Exception:  # keep the loop alive
+            log.exception("scheduled sync failed")
 
 
 @app.get("/api/health")
@@ -164,3 +190,45 @@ def export_orders(brand: str | None = None, start: date | None = None, end: date
 @app.post("/api/etl/run")
 def run_etl():
     return etl.run().as_dict()
+
+
+# ---------- data sources ----------
+
+@app.get("/api/sources")
+def list_sources():
+    return sources.list_sources()
+
+
+@app.post("/api/sync")
+def sync(full: bool = False):
+    """Pull fresh data from every store in stores.json, then rebuild the reports."""
+    try:
+        return sources.sync_all(full=full)
+    except ConnectorError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/sources/csv")
+async def upload_csv(file: UploadFile = File(...), name: str = Form(...), code: str | None = Form(None),
+                     currency: str | None = Form(None), replace_demo: bool = Form(True)):
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="CSV larger than 50 MB")
+    try:
+        return sources.import_csv(content, name.strip(), (code or "").strip() or None,
+                                  (currency or "").strip().upper() or None, replace_demo=replace_demo)
+    except (ConnectorError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/api/sources/{code}")
+def delete_source(code: str):
+    try:
+        return sources.delete_source(code)
+    except ConnectorError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/sources/demo")
+def restore_demo():
+    return sources.restore_demo()

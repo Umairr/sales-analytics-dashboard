@@ -105,7 +105,7 @@ def build_export(brand: dict, rng: random.Random) -> dict:
         subs.append({"id": f"SUB-{sub_no}", "customer_email": rng.choice(customers)["email"], "plan": plan,
                      "price": f"{price:.2f}", "started_at": started.isoformat(), "cancelled_at": cancelled})
 
-    return {"brand": {"code": brand["code"], "name": brand["name"]}, "currency": brand["currency"],
+    return {"brand": {"code": brand["code"], "name": brand["name"]}, "currency": brand["currency"], "platform": "demo",
             "exported_at": _iso(datetime(2026, 11, 1)), "orders": orders, "subscriptions": subs}
 
 

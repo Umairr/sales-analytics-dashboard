@@ -196,3 +196,23 @@ td { padding: 8px 6px; border-bottom: 1px solid var(--grid); }
 
 .nowrap td, .nowrap th { white-space: nowrap; }
 .ellipsis { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* data sources */
+.platform { display: inline-block; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+.btn-row { display: flex; gap: 8px; }
+.link-btn { border: 0; background: none; color: var(--accent); padding: 0; font-size: 13px; text-decoration: underline; }
+.hint { font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
+.ok-text { color: var(--up); font-weight: 600; }
+.upload { display: flex; flex-direction: column; gap: 12px; }
+.upload label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.upload label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
+.upload input:not([type='checkbox']) { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; font-weight: 400; }
+.upload .primary { align-self: flex-start; cursor: pointer; }
+.setup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.setup h3 { font-size: 14px; margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+.setup ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+.setup .hint { grid-column: 1 / -1; margin: 0; }
+.empty-state { margin-top: 40px; text-align: center; padding: 48px 24px; background: var(--card); border: 1px dashed var(--line); border-radius: 12px; }
+.empty-state h2 { margin: 0 0 8px; }
+.empty-state p { color: var(--muted); margin: 0 0 18px; }
+@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
