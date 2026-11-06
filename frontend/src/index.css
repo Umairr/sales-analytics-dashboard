@@ -1,0 +1,80 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; cursor: pointer; }
+
+.app { max-width: 1320px; margin: 0 auto; padding: 24px 24px 40px; }
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; gap: 8px; }
+.primary, .ghost {
+  border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; text-decoration: none;
+  border: 1px solid var(--accent);
+}
+.primary { background: var(--accent); color: #fff; }
+.ghost { background: #fff; color: var(--accent); }
+.notice, .error { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.notice { background: #eff6ff; color: #1e40af; }
+.error { background: #fef2f2; color: #991b1b; }
+
+.filters { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 20px 0 16px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: #fff; font-size: 13px; color: var(--ink);
+}
+.chip.on { border-color: var(--ink); background: var(--ink); color: #fff; }
+.chip .ccy { font-size: 11px; opacity: 0.6; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.chip .dot { margin-right: 0; }
+
+.segmented { display: inline-flex; background: #e9ecf1; border-radius: 8px; padding: 3px; }
+.segmented button { border: 0; background: transparent; padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+.segmented button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); font-weight: 600; }
+.segmented.small button { padding: 3px 10px; font-size: 12px; text-transform: capitalize; }
+
+.kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; transition: opacity 0.2s; }
+.kpis.dim { opacity: 0.55; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.kpi-label { font-size: 12px; color: var(--muted); }
+.kpi-value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi-hint { font-size: 12px; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.grid > .card:first-child { grid-column: 1 / -1; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.card h2 { font-size: 14px; margin: 0; }
+.link { font-size: 13px; color: var(--accent); text-decoration: none; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 8px 6px; border-bottom: 1px solid #f1f2f4; }
+.r { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.status { font-size: 11px; padding: 2px 8px; border-radius: 999px; text-transform: capitalize; }
+.status.paid { background: #ecfdf5; color: #047857; }
+.status.refunded { background: #fef2f2; color: #b91c1c; }
+.status.pending { background: #fffbeb; color: #b45309; }
+.foot { margin-top: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .card { overflow-x: auto; }
+  .filters { flex-direction: column; align-items: stretch; }
+  .segmented { overflow-x: auto; }
+}
+.muted { color: var(--muted); }
