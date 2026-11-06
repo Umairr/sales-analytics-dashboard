@@ -40,7 +40,21 @@ def build_export(brand: dict, rng: random.Random) -> dict:
     start = END_DATE - timedelta(days=DAYS - 1)
     orders, subs = [], []
     order_no = 1000
-    customers = [f"{brand['code']}.customer{i}@example.com" for i in range(1, 400)]
+    # Customer lifecycle: new shoppers arrive every day, each has a loyalty weight
+    # and a lifetime after which they stop buying. That produces realistic
+    # cohorts, repeat rates and RFM segments.
+    customers: list[dict] = []
+
+    def pick_customer(day: date) -> str:
+        active = [c for c in customers if c["until"] >= day]
+        if not active or rng.random() < 0.42:
+            n = len(customers) + 1
+            c = {"email": f"{brand['code']}.customer{n}@example.com",
+                 "weight": rng.expovariate(1.0) + 0.05,
+                 "until": day + timedelta(days=int(rng.expovariate(1 / 140)))}
+            customers.append(c)
+            return c["email"]
+        return rng.choices(active, weights=[c["weight"] for c in active])[0]["email"]
 
     for day_offset in range(DAYS):
         day = start + timedelta(days=day_offset)
@@ -58,10 +72,11 @@ def build_export(brand: dict, rng: random.Random) -> dict:
             total = sum(float(i["price"]) * i["quantity"] for i in items)
             status = rng.choices(["paid", "refunded", "pending"], weights=[92, 5, 3])[0]
             created = datetime.combine(day, datetime.min.time()) + timedelta(minutes=rng.randint(0, 1439))
+            email = pick_customer(day)
             orders.append({
                 "id": f"{brand['code'].upper()}-{order_no}",
                 "created_at": _iso(created),
-                "customer_email": rng.choice(customers).upper() if rng.random() < 0.1 else rng.choice(customers),
+                "customer_email": email.upper() if rng.random() < 0.1 else email,
                 "financial_status": status,
                 "total_price": f"{total:.2f}",
                 "test": False,
@@ -87,7 +102,7 @@ def build_export(brand: dict, rng: random.Random) -> dict:
         if rng.random() < 0.38:
             c = started + timedelta(days=rng.randint(20, 240))
             cancelled = c.isoformat() if c <= END_DATE else None
-        subs.append({"id": f"SUB-{sub_no}", "customer_email": rng.choice(customers), "plan": plan,
+        subs.append({"id": f"SUB-{sub_no}", "customer_email": rng.choice(customers)["email"], "plan": plan,
                      "price": f"{price:.2f}", "started_at": started.isoformat(), "cancelled_at": cancelled})
 
     return {"brand": {"code": brand["code"], "name": brand["name"]}, "currency": brand["currency"],
