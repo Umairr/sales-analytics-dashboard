@@ -32,6 +32,8 @@ A unified reporting dashboard for a business running several e-commerce brands. 
 
 ## Quick start
 
+**macOS shortcut:** double-click `start-mac.command` in Finder. It installs everything, starts both servers and opens the dashboard.
+
 ### Backend
 
 ```bash
